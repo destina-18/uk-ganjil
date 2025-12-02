@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model dosen {
+  id_dosen         Int           @id @default(autoincrement())
+  nidn          Int           @unique(map: "Dosen_nidn_key")
+  alamat        String
+  jenis_kelamin String
+  nama_dosen    String
+  penjadwalan   penjadwalan[]
+}
+
+model krs {
+  id_krs           Int         @id @default(autoincrement())
+  mahasiswaId  Int
+  matakuliahId Int
+  jadwalId     Int
+  // penjadwalan  penjadwalan @relation(fields: [jadwalId], references: [id], map: "KRS_jadwalId_fkey")
+  // mahasiswa    mahasiswa   @relation(fields: [mahasiswaId], references: [id], map: "KRS_mahasiswaId_fkey")
+  // matakuliah   matakuliah  @relation(fields: [matakuliahId], references: [id], map: "KRS_matakuliahId_fkey")
+
+  @@index([jadwalId], map: "KRS_jadwalId_fkey")
+  @@index([mahasiswaId], map: "KRS_mahasiswaId_fkey")
+  @@index([matakuliahId], map: "KRS_matakuliahId_fkey")
+}
+
+model mahasiswa {
+  id_mahasiswa     Int    @id @default(autoincrement())
+  nim     String @unique(map: "Mahasiswa_nim_key")
+  nama    String
+  userId  Int    @unique(map: "Mahasiswa_userId_key")
+  jurusan String
+  krs     krs[]
+  user    user   @relation(fields: [userId], references: [id], map: "Mahasiswa_userId_fkey")
+}
+
+model matakuliah {
+  id_matakuliah         Int           @id @default(autoincrement())
+  nama        String
+  sks         Int
+  krs         krs[]
+  penjadwalan penjadwalan[]
+}
+
+model penjadwalan {
+  id_penjadwalan          Int        @id @default(autoincrement())
+  hari         String
+  jam_mulai    String
+  jam_selesai  String
+  ruang        String
+  dosenId      Int
+  matakuliahId Int
+  krs          krs[]
+  // dosen        dosen      @relation(fields: [dosenId], references: [id], map: "Penjadwalan_dosenId_fkey")
+  // matakuliah   matakuliah @relation(fields: [matakuliahId], references: [id], map: "Penjadwalan_matakuliahId_fkey")
+
+  @@index([dosenId], map: "Penjadwalan_dosenId_fkey")
+  @@index([matakuliahId], map: "Penjadwalan_matakuliahId_fkey")
+}
+
+model user {
+  id       Int        @id @default(autoincrement())
+  password  String
+  role      user_role
+  username  String     @unique(map: "User_username_key")
+  mahasiswa mahasiswa?
+}
+
+enum user_role {
+  ADMIN
+  MAHASISWA
+}
