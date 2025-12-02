@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateDosenDto } from './dto/create-dosen.dto';
 import { UpdateDosenDto } from './dto/update-dosen.dto';
 
@@ -7,142 +7,138 @@ import { UpdateDosenDto } from './dto/update-dosen.dto';
 export class DosenService {
   constructor(private prisma: PrismaService) { }
 
-  // CREATE
-  async create(createDosenDto: CreateDosenDto) {
+  async create(dto: CreateDosenDto) {
     try {
+      const existing = await this.prisma.dosen.findUnique({
+        where: { nidn: dto.nidn },
+      });
+
+      if (existing) {
+        return {
+          status: 'error',
+          message: 'NIDN sudah terdaftar',
+          data: null,
+        };
+      }
+
       const dosen = await this.prisma.dosen.create({
-        data: createDosenDto,
-      });
-
-      return {
-        success: true,
-        message: 'Dosen created successfully',
-        data: dosen,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error creating dosen: ${error.message}`,
-        data: null,
-      };
-    }
-  }
-
-  // FIND ALL
-  async findAll() {
-    try {
-      const data = await this.prisma.dosen.findMany();
-
-      return {
-        success: true,
-        message: 'All dosen fetched successfully',
-        data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error fetching dosen: ${error.message}`,
-        data: null,
-      };
-    }
-  }
-
-  // FIND ONE
-  async findOne(id: number) {
-    try {
-      const dosen = await this.prisma.dosen.findUnique({
-        where: { id },
-      });
-
-      if (!dosen) {
-        return {
-          success: false,
-          message: 'Dosen not found',
-          data: null,
-        };
-      }
-
-      return {
-        success: true,
-        message: 'Dosen found',
-        data: dosen,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error fetching dosen: ${error.message}`,
-        data: null,
-      };
-    }
-  }
-
-  // UPDATE
-  async update(nidn: number, updateDosenDto: UpdateDosenDto) {
-    try {
-      const findDosen = await this.prisma.dosen.findUnique({
-        where: { nidn },
-      });
-
-      if (!findDosen) {
-        return {
-          success: false,
-          message: `Dosen dengan NIDN ${nidn} tidak ditemukan`,
-          data: null,
-        };
-      }
-
-      const updatedDosen = await this.prisma.dosen.update({
-        where: { nidn },
         data: {
-          nama_dosen: updateDosenDto.nama_dosen ?? findDosen.nama_dosen,
-          jenis_kelamin: updateDosenDto.jenis_kelamin ?? findDosen.jenis_kelamin,
-          alamat: updateDosenDto.alamat ?? findDosen.alamat,
+          nidn: dto.nidn,
+          nama_dosen: dto.nama_dosen,
+          jenis_kelamin: dto.jenis_kelamin,
+          alamat: dto.alamat,
         },
       });
 
       return {
-        success: true,
-        message: `Dosen dengan NIDN ${nidn} berhasil diupdate`,
-        data: updatedDosen,
+        status: 'success',
+        message: 'Dosen berhasil ditambahkan',
+        data: {
+          nidn: dosen.nidn,
+          nama_dosen: dosen.nama_dosen,
+          jenis_kelamin: dosen.jenis_kelamin,
+          alamat: dosen.alamat,
+        },
       };
     } catch (error) {
       return {
-        success: false,
-        message: `Error saat update dosen: ${error.message}`,
+        status: 'error',
+        message: error.message,
         data: null,
       };
     }
   }
 
-
-  // DELETE
-  async remove(nidn: number) {
+  async findAll() {
     try {
-      const findDosen = await this.prisma.dosen.findUnique({
+      const dosens = await this.prisma.dosen.findMany({
+        select: {
+          nidn: true,
+          nama_dosen: true,
+          jenis_kelamin: true,
+          alamat: true,
+        },
+      });
+
+      return {
+        status: 'success',
+        message: 'Data dosen berhasil diambil',
+        data: dosens,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+        data: null,
+      };
+    }
+  }
+
+  async update(nidn: number, dto: UpdateDosenDto) {
+    try {
+      const existing = await this.prisma.dosen.findUnique({
         where: { nidn },
       });
 
-      if (!findDosen) {
+      if (!existing) {
         return {
-          success: false,
-          message: `Dosen dengan NIDN ${nidn} tidak ditemukan`,
+          status: 'error',
+          message: 'Dosen tidak ditemukan',
           data: null,
         };
       }
 
-      const deletedDosen = await this.prisma.dosen.delete({
+      const dosen = await this.prisma.dosen.update({
+        where: { nidn },
+        data: dto,
+      });
+
+      return {
+        status: 'success',
+        message: 'Dosen berhasil diupdate',
+        data: {
+          nidn: dosen.nidn,
+          nama_dosen: dosen.nama_dosen,
+          jenis_kelamin: dosen.jenis_kelamin,
+          alamat: dosen.alamat,
+        },
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: error.message,
+        data: null,
+      };
+    }
+  }
+
+  async remove(nidn: number) {
+    try {
+      const existing = await this.prisma.dosen.findUnique({
+        where: { nidn },
+      });
+
+      if (!existing) {
+        return {
+          status: 'error',
+          message: 'Dosen tidak ditemukan',
+          data: null,
+        };
+      }
+
+      await this.prisma.dosen.delete({
         where: { nidn },
       });
 
       return {
-        success: true,
-        message: `Dosen dengan NIDN ${nidn} berhasil dihapus`,
-        data: deletedDosen,
+        status: 'success',
+        message: 'Dosen berhasil dihapus',
+        data: null,
       };
     } catch (error) {
       return {
-        success: false,
-        message: `Error saat menghapus dosen: ${error.message}`,
+        status: 'error',
+        message: error.message,
         data: null,
       };
     }

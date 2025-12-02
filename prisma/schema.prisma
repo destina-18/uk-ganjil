@@ -3,76 +3,99 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model dosen {
-  id_dosen         Int           @id @default(autoincrement())
-  nidn          Int           @unique(map: "Dosen_nidn_key")
-  alamat        String
-  jenis_kelamin String
-  nama_dosen    String
-  penjadwalan   penjadwalan[]
-}
-
-model krs {
-  id_krs           Int         @id @default(autoincrement())
-  mahasiswaId  Int
-  matakuliahId Int
-  jadwalId     Int
-  // penjadwalan  penjadwalan @relation(fields: [jadwalId], references: [id], map: "KRS_jadwalId_fkey")
-  // mahasiswa    mahasiswa   @relation(fields: [mahasiswaId], references: [id], map: "KRS_mahasiswaId_fkey")
-  // matakuliah   matakuliah  @relation(fields: [matakuliahId], references: [id], map: "KRS_matakuliahId_fkey")
-
-  @@index([jadwalId], map: "KRS_jadwalId_fkey")
-  @@index([mahasiswaId], map: "KRS_mahasiswaId_fkey")
-  @@index([matakuliahId], map: "KRS_matakuliahId_fkey")
-}
-
-model mahasiswa {
-  id_mahasiswa     Int    @id @default(autoincrement())
-  nim     String @unique(map: "Mahasiswa_nim_key")
-  nama    String
-  userId  Int    @unique(map: "Mahasiswa_userId_key")
-  jurusan String
-  krs     krs[]
-  user    user   @relation(fields: [userId], references: [id], map: "Mahasiswa_userId_fkey")
-}
-
-model matakuliah {
-  id_matakuliah         Int           @id @default(autoincrement())
-  nama        String
-  sks         Int
-  krs         krs[]
-  penjadwalan penjadwalan[]
-}
-
-model penjadwalan {
-  id_penjadwalan          Int        @id @default(autoincrement())
-  hari         String
-  jam_mulai    String
-  jam_selesai  String
-  ruang        String
-  dosenId      Int
-  matakuliahId Int
-  krs          krs[]
-  // dosen        dosen      @relation(fields: [dosenId], references: [id], map: "Penjadwalan_dosenId_fkey")
-  // matakuliah   matakuliah @relation(fields: [matakuliahId], references: [id], map: "Penjadwalan_matakuliahId_fkey")
-
-  @@index([dosenId], map: "Penjadwalan_dosenId_fkey")
-  @@index([matakuliahId], map: "Penjadwalan_matakuliahId_fkey")
-}
-
-model user {
-  id       Int        @id @default(autoincrement())
+model User {
+  id        Int        @id @default(autoincrement())
+  username  String     @unique
   password  String
-  role      user_role
-  username  String     @unique(map: "User_username_key")
-  mahasiswa mahasiswa?
+  role      UserRole
+  mahasiswa Mahasiswa?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("users")
 }
 
-enum user_role {
+model Dosen {
+  nidn          Int           @id
+  nama_dosen    String        @db.VarChar(255)
+  jenis_kelamin JenisKelamin
+  alamat        String        @db.Text
+  matakuliah    Matakuliah[]
+  penjadwalan   Penjadwalan[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("dosen")
+}
+
+model Mahasiswa {
+  nim                 String                @id @db.VarChar(50)
+  nama_mahasiswa      String                @db.VarChar(255)
+  jenis_kelamin       JenisKelamin
+  jurusan             String                @db.VarChar(255)
+  userId              Int                   @unique
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mahasiswaMatakuliah MahasiswaMatakuliah[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@map("mahasiswa")
+}
+
+model Matakuliah {
+  id_matakuliah       Int                   @id
+  nama_matakuliah     String                @db.VarChar(255)
+  id_dosen            Int
+  sks                 Int
+  dosen               Dosen                 @relation(fields: [id_dosen], references: [nidn], onDelete: Restrict)
+  penjadwalan         Penjadwalan?
+  mahasiswaMatakuliah MahasiswaMatakuliah[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@map("matakuliah")
+}
+
+model Penjadwalan {
+  id            Int        @id @default(autoincrement())
+  id_dosen      Int
+  id_matakuliah Int        @unique
+  jadwal        String     @db.VarChar(255)
+  dosen         Dosen      @relation(fields: [id_dosen], references: [nidn], onDelete: Restrict)
+  matakuliah    Matakuliah @relation(fields: [id_matakuliah], references: [id_matakuliah], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@map("penjadwalan")
+}
+
+model MahasiswaMatakuliah {
+  id            Int        @id @default(autoincrement())
+  mahasiswa_nim String     @db.VarChar(50)
+  id_matakuliah Int
+  tahun_ajaran  String?    @db.VarChar(20)
+  semester      Int?
+  mahasiswa     Mahasiswa  @relation(fields: [mahasiswa_nim], references: [nim], onDelete: Cascade)
+  matakuliah    Matakuliah @relation(fields: [id_matakuliah], references: [id_matakuliah], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+
+  @@unique([mahasiswa_nim, id_matakuliah])
+  @@index([mahasiswa_nim])
+  @@index([id_matakuliah])
+  @@index([tahun_ajaran, semester])
+  @@map("mahasiswa_matakuliah")
+}
+
+enum UserRole {
   ADMIN
   MAHASISWA
+}
+
+enum JenisKelamin {
+  L
+  P
 }

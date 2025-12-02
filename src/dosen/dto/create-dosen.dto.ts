@@ -1,16 +1,17 @@
-import { IsNotEmpty, IsString, IsInt } from 'class-validator';
+import { IsInt, IsString, IsEnum, IsNotEmpty } from 'class-validator';
 
 export class CreateDosenDto {
   @IsInt()
+  @IsNotEmpty()
   nidn: number;
 
   @IsString()
   @IsNotEmpty()
   nama_dosen: string;
 
-  @IsString()
+  @IsEnum(['L', 'P'])
   @IsNotEmpty()
-  jenis_kelamin: string;
+  jenis_kelamin: 'L' | 'P';
 
   @IsString()
   @IsNotEmpty()

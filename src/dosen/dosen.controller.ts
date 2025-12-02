@@ -1,15 +1,30 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { DosenService } from './dosen.service';
 import { CreateDosenDto } from './dto/create-dosen.dto';
 import { UpdateDosenDto } from './dto/update-dosen.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth-guard';
+import { RolesGuard } from '../auth/roles-guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('dosen')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class DosenController {
-  constructor(private readonly dosenService: DosenService) {}
+  constructor(private readonly dosenService: DosenService) { }
 
   @Post()
-  create(@Body() createDosenDto: CreateDosenDto) {
-    return this.dosenService.create(createDosenDto);
+  create(@Body() dto: CreateDosenDto) {
+    return this.dosenService.create(dto);
   }
 
   @Get()
@@ -17,21 +32,13 @@ export class DosenController {
     return this.dosenService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.dosenService.findOne(id);
+  @Put(':nidn')
+  update(@Param('nidn', ParseIntPipe) nidn: number, @Body() dto: UpdateDosenDto) {
+    return this.dosenService.update(nidn, dto);
   }
 
-  @Put(':nisd')
-  update(
-    @Param('nisd', ParseIntPipe) nisd: number,
-    @Body() updateDosenDto: UpdateDosenDto,
-  ) {
-    return this.dosenService.update(nisd, updateDosenDto);
-  }
-
-  @Delete(':nisd')
-  remove(@Param('nisd', ParseIntPipe) nisd: number) {
-    return this.dosenService.remove(nisd);
+  @Delete(':nidn')
+  remove(@Param('nidn', ParseIntPipe) nidn: number) {
+    return this.dosenService.remove(nidn);
   }
 }

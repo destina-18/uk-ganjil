@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service'; 
+import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { error } from 'console';
@@ -9,13 +9,13 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-  ) {}
+  ) { }
 
   async register(username: string, password: string, role: string) {
     try {
       const existing = await this.prisma.user.findUnique({
         where: { username },
-        include: {mahasiswa:true},
+        include: { mahasiswa: true },
       });
 
       if (existing) {
@@ -56,14 +56,15 @@ export class AuthService {
     try {
       const user = await this.prisma.user.findUnique({ where: { username } });
       if (!user) return {
-         status : "error", 
-         message: "User tidak ditemukan" };
+        status: "error",
+        message: "User tidak ditemukan"
+      };
 
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) return {
-         status: "error",
-         message: "Password salah" 
-        };
+        status: "error",
+        message: "Password salah"
+      };
 
       const payload = { sub: user.id, role: user.role };
       const token = await this.jwt.signAsync(payload);
@@ -74,10 +75,10 @@ export class AuthService {
         data: { token, role: user.role },
       };
     } catch (error: any) {
-  return {
-    status: "error",
-    message: `Something went wrong: ${error?.message || "Internal Server Error"}`,
-  };
-}
+      return {
+        status: "error",
+        message: `Something went wrong: ${error?.message || "Internal Server Error"}`,
+      };
+    }
   }
 }

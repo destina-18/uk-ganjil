@@ -1,11 +1,21 @@
 import { Module } from '@nestjs/common';
-import { DosenModule } from './dosen/dosen.module';
 import { AuthModule } from './auth/auth.module';
-import { BcryptModule } from './bcrypt/bcrypt.module';
-import { PrismaService } from 'src/prisma/prisma.service';
-
+import { DosenModule } from './dosen/dosen.module';
+import { MatakuliahModule } from './matakuliah/matakuliah.module';
+import { MahasiswaModule } from './mahasiswa/mahasiswa.module';
+import { PenjadwalanModule } from './penjadwalan/penjadwalan.module';
+import { KrsModule } from './krs/krs.module';
+import { AnalisisModule } from './analisis/analisis.module';
 
 @Module({
-  imports: [ DosenModule, AuthModule, BcryptModule],
+  imports: [
+    AuthModule,
+    DosenModule,
+    MatakuliahModule,
+    MahasiswaModule,
+    PenjadwalanModule,
+    KrsModule,
+    AnalisisModule,
+  ],
 })
-export class AppModule {}
+export class AppModule { }
